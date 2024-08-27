@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQL Query Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+      }
+
+      h2 {
+        margin-top: 30px;
+        font-size: 20px;
+      }
+
+      form {
+        margin-bottom: 20px;
+      }
+
+      textarea {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      button {
+        padding: 6px 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        background-color: #cccccc;
+      }
+
+      #result {
+        margin-top: 20px;
+      }
+
+      .loading {
+        color: #4caf50;
+      }
+
+      .error {
+        color: red;
+      }
+
+      table {
+        width: 50%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+      }
+
+      th {
+        background-color: #f9f9f9;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ask a Question</h1>
+    <form id="query-form">
+      <label for="userQuery">Enter your query:</label><br /><br />
+      <textarea id="userQuery" name="userQuery" required></textarea><br />
+      <button type="submit">Submit</button>
+    </form>
+    <h2>Result</h2>
+    <div id="result"></div>
+
+    <script>
+      document
+        .getElementById("query-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          // Get elements
+          const userQuery = document.getElementById("userQuery").value;
+          const resultDiv = document.getElementById("result");
+          const submitButton = e.target.querySelector("button");
+
+          // Clear previous results and set loading state
+          resultDiv.innerHTML = "<p class='loading'>Loading...</p>";
+          submitButton.disabled = true;
+
+          try {
+            const response = await fetch("/query", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ userQuery }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+              if (result.formattedResult) {
+                // Convert Markdown to HTML using marked.js and display it
+                resultDiv.innerHTML = marked.parse(result.formattedResult);
+              } else {
+                resultDiv.innerHTML =
+                  "<p>No results found. Try another query.</p>";
+              }
+            } else {
+              throw new Error(result.error || "An unknown error occurred.");
+            }
+          } catch (error) {
+            // Display error message in red
+            resultDiv.innerHTML = `<p class='error'>Error: ${error.message}</p>`;
+          } finally {
+            // Reset loading state
+            submitButton.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>
